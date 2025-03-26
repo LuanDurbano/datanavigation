@@ -217,7 +217,7 @@ export default function Index() {
                 </p>
                 <Button variant="outline" size="sm" asChild>
                   <Link to="/browser">
-                    Ver Navegador <ArrowRight className="ml-2 h-4 w-4" />
+                    Ver Navegador <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
               </motion.div>
@@ -238,7 +238,7 @@ export default function Index() {
                 </p>
                 <Button variant="outline" size="sm" asChild>
                   <Link to="/transformation">
-                    Ver Transformação <ArrowRight className="ml-2 h-4 w-4" />
+                    Ver Transformação <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
               </motion.div>
@@ -259,7 +259,7 @@ export default function Index() {
                 </p>
                 <Button variant="outline" size="sm" asChild>
                   <Link to="/database">
-                    Ver Consultas SQL <ArrowRight className="ml-2 h-4 w-4" />
+                    Ver Consultas SQL <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
               </motion.div>
