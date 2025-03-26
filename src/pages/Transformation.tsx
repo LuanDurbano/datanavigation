@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FileText } from "lucide-react";
 import { PdfTransformer } from "@/components/transformation/PdfTransformer";
 import { PythonCodeSample } from "@/components/transformation/CodeSample";
+import { BatchProcessor } from "@/components/transformation/BatchProcessor";
 
 export default function Transformation() {
   return (
@@ -56,13 +57,23 @@ export default function Transformation() {
             </TabsContent>
             
             <TabsContent value="batch-processing" className="mt-0">
-              <div className="rounded-lg border border-dashed p-16 text-center">
-                <FileText className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                <h3 className="mt-4 text-lg font-medium">Processamento em Lote</h3>
-                <p className="mt-2 text-muted-foreground max-w-md mx-auto">
-                  Esta funcionalidade estará disponível em breve. O processamento em lote permitirá converter múltiplos documentos PDF simultaneamente.
-                </p>
-              </div>
+              <BatchProcessor />
+              
+              <Card className="mt-8">
+                <CardHeader>
+                  <CardTitle>Instruções para Processamento em Lote</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ol className="list-decimal pl-5 space-y-2">
+                    <li>Selecione vários arquivos PDF para processamento.</li>
+                    <li>Configure o nome da pasta de saída onde os arquivos CSV serão salvos.</li>
+                    <li>Clique em "Upload" para enviar os arquivos selecionados.</li>
+                    <li>Após o upload, clique em "Processar" para iniciar a conversão em lote.</li>
+                    <li>O progresso será exibido durante o processamento.</li>
+                    <li>Após a conclusão, você poderá baixar todos os resultados em um único arquivo ZIP.</li>
+                  </ol>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </section>
