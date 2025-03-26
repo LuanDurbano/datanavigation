@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { DataBrowser } from "@/components/data/DataBrowser";
+import { DatasetBrowser } from "@/components/data/DatasetBrowser";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/common/Card";
 import { Database, FileText, Download } from "lucide-react";
@@ -69,13 +70,7 @@ export default function Browser() {
             </TabsContent>
             
             <TabsContent value="datasets" className="mt-0">
-              <div className="rounded-lg border border-dashed p-16 text-center">
-                <Database className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                <h3 className="mt-4 text-lg font-medium">Conjuntos de Dados</h3>
-                <p className="mt-2 text-muted-foreground max-w-md mx-auto">
-                  Esta funcionalidade estará disponível em breve. Os conjuntos de dados permitirão acesso estruturado a informações de operadoras, beneficiários e demonstrações contábeis.
-                </p>
-              </div>
+              <DatasetBrowser />
             </TabsContent>
           </Tabs>
         </section>
