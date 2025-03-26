@@ -7,27 +7,59 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/common/Card";
 import { Database as DatabaseIcon, Download, BarChart4, FileDown } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SqlEditor } from "@/components/database/SqlEditor";
 import { SqlSampleCode } from "@/components/database/SqlSamples";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
 const sampleResults = [
-  { razao_social: "BRADESCO SAUDE S.A.", despesa_eventos: "R$ 6.458.224.000,00" },
-  { razao_social: "AMIL ASSISTENCIA MEDICA INTERNACIONAL S.A.", despesa_eventos: "R$ 5.123.768.000,00" },
-  { razao_social: "NOTRE DAME INTERMEDICA SAUDE S.A.", despesa_eventos: "R$ 4.932.553.000,00" },
-  { razao_social: "SUL AMERICA COMPANHIA DE SEGURO SAUDE", despesa_eventos: "R$ 3.876.421.000,00" },
-  { razao_social: "UNIMED-BELO HORIZONTE COOPERATIVA DE TRABALHO MEDICO", despesa_eventos: "R$ 2.453.678.000,00" },
-  { razao_social: "UNIMED-RIO COOPERATIVA DE TRABALHO MEDICO DO RIO DE JANEIRO", despesa_eventos: "R$ 2.345.789.000,00" },
-  { razao_social: "UNIMED PORTO ALEGRE - COOPERATIVA MÉDICA LTDA", despesa_eventos: "R$ 2.123.456.000,00" },
-  { razao_social: "HAPVIDA ASSISTENCIA MEDICA S.A.", despesa_eventos: "R$ 1.987.654.000,00" },
-  { razao_social: "CENTRAL NACIONAL UNIMED - COOPERATIVA CENTRAL", despesa_eventos: "R$ 1.876.542.000,00" },
-  { razao_social: "AMIL SAUDE LTDA.", despesa_eventos: "R$ 1.765.432.000,00" },
+  { razao_social: "BRADESCO SAUDE S.A.", despesa_eventos: 6458224000 },
+  { razao_social: "AMIL ASSISTENCIA MEDICA INTERNACIONAL S.A.", despesa_eventos: 5123768000 },
+  { razao_social: "NOTRE DAME INTERMEDICA SAUDE S.A.", despesa_eventos: 4932553000 },
+  { razao_social: "SUL AMERICA COMPANHIA DE SEGURO SAUDE", despesa_eventos: 3876421000 },
+  { razao_social: "UNIMED-BELO HORIZONTE COOPERATIVA DE TRABALHO MEDICO", despesa_eventos: 2453678000 },
+  { razao_social: "UNIMED-RIO COOPERATIVA DE TRABALHO MEDICO DO RIO DE JANEIRO", despesa_eventos: 2345789000 },
+  { razao_social: "UNIMED PORTO ALEGRE - COOPERATIVA MÉDICA LTDA", despesa_eventos: 2123456000 },
+  { razao_social: "HAPVIDA ASSISTENCIA MEDICA S.A.", despesa_eventos: 1987654000 },
+  { razao_social: "CENTRAL NACIONAL UNIMED - COOPERATIVA CENTRAL", despesa_eventos: 1876542000 },
+  { razao_social: "AMIL SAUDE LTDA.", despesa_eventos: 1765432000 },
 ];
+
+// Formatar os valores para melhor visualização
+const formatValue = (value: number) => {
+  if (value >= 1000000000) {
+    return `${(value / 1000000000).toFixed(1)} bi`;
+  }
+  if (value >= 1000000) {
+    return `${(value / 1000000).toFixed(1)} mi`;
+  }
+  return value.toString();
+};
+
+// Preparar os dados para o gráfico
+const chartData = sampleResults.map(item => ({
+  name: item.razao_social.split(' ')[0], // Usa apenas a primeira palavra para eixo X mais limpo
+  despesa: item.despesa_eventos,
+  fullName: item.razao_social
+}));
+
+// Configuração para o gráfico
+const chartConfig = {
+  despesa: {
+    label: "Despesa com Eventos",
+    theme: {
+      light: "#8B5CF6",
+      dark: "#9b87f5"
+    }
+  }
+};
 
 export default function DatabasePage() {
   const { toast } = useToast();
   const [hasResults, setHasResults] = useState(false);
+  const [activeChartType, setActiveChartType] = useState<'bar' | 'horizontal'>('bar');
   
   const handleExecuteQuery = () => {
     setHasResults(true);
@@ -100,7 +132,7 @@ export default function DatabasePage() {
                               {sampleResults.map((row, index) => (
                                 <TableRow key={index}>
                                   <TableCell className="font-medium">{row.razao_social}</TableCell>
-                                  <TableCell>{row.despesa_eventos}</TableCell>
+                                  <TableCell>{formatValue(row.despesa_eventos)}</TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>
@@ -110,20 +142,106 @@ export default function DatabasePage() {
                     </Card>
                     
                     <Card className="mt-6">
-                      <CardHeader>
-                        <CardTitle>Visualização de Dados</CardTitle>
-                        <CardDescription>
-                          Representação gráfica dos resultados da consulta
-                        </CardDescription>
+                      <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                          <CardTitle>Visualização de Dados</CardTitle>
+                          <CardDescription>
+                            Representação gráfica dos resultados da consulta
+                          </CardDescription>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant={activeChartType === 'bar' ? "default" : "outline"} 
+                            size="sm" 
+                            onClick={() => setActiveChartType('bar')}
+                          >
+                            Barras
+                          </Button>
+                          <Button 
+                            variant={activeChartType === 'horizontal' ? "default" : "outline"} 
+                            size="sm" 
+                            onClick={() => setActiveChartType('horizontal')}
+                          >
+                            Horizontal
+                          </Button>
+                        </div>
                       </CardHeader>
                       <CardContent>
-                        <div className="p-6 border rounded-md flex items-center justify-center min-h-[400px]">
-                          <div className="text-center">
-                            <BarChart4 className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
-                            <p className="text-muted-foreground">
-                              Visualização seria gerada automaticamente para exibir as 10 operadoras com maiores despesas.
-                            </p>
-                          </div>
+                        <div className="border rounded-md p-4">
+                          <ChartContainer className="h-[400px]" config={chartConfig}>
+                            {activeChartType === 'bar' ? (
+                              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis 
+                                  dataKey="name" 
+                                  angle={-45} 
+                                  textAnchor="end" 
+                                  height={70} 
+                                  interval={0} 
+                                />
+                                <YAxis tickFormatter={(value) => formatValue(value)} />
+                                <Tooltip 
+                                  content={({ active, payload }) => {
+                                    if (active && payload && payload.length) {
+                                      return (
+                                        <div className="bg-background border p-2 rounded-md shadow-md">
+                                          <p className="font-medium">{payload[0].payload.fullName}</p>
+                                          <p>
+                                            <span className="text-muted-foreground">Despesa: </span>
+                                            <span className="font-mono">R$ {formatValue(payload[0].value as number)}</span>
+                                          </p>
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  }}
+                                />
+                                <Legend />
+                                <Bar 
+                                  dataKey="despesa" 
+                                  fill="var(--color-despesa)" 
+                                  name="Despesa com Eventos" 
+                                />
+                              </BarChart>
+                            ) : (
+                              <BarChart 
+                                data={chartData} 
+                                layout="vertical" 
+                                margin={{ top: 20, right: 30, left: 150, bottom: 40 }}
+                              >
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis type="number" tickFormatter={(value) => formatValue(value)} />
+                                <YAxis 
+                                  type="category" 
+                                  dataKey="fullName" 
+                                  width={140} 
+                                  interval={0} 
+                                />
+                                <Tooltip 
+                                  content={({ active, payload }) => {
+                                    if (active && payload && payload.length) {
+                                      return (
+                                        <div className="bg-background border p-2 rounded-md shadow-md">
+                                          <p className="font-medium">{payload[0].payload.fullName}</p>
+                                          <p>
+                                            <span className="text-muted-foreground">Despesa: </span>
+                                            <span className="font-mono">R$ {formatValue(payload[0].value as number)}</span>
+                                          </p>
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  }}
+                                />
+                                <Legend />
+                                <Bar 
+                                  dataKey="despesa" 
+                                  fill="var(--color-despesa)" 
+                                  name="Despesa com Eventos" 
+                                />
+                              </BarChart>
+                            )}
+                          </ChartContainer>
                         </div>
                       </CardContent>
                     </Card>
