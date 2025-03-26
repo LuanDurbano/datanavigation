@@ -9,6 +9,7 @@ import Browser from "./pages/Browser";
 import Transformation from "./pages/Transformation";
 import Database from "./pages/Database";
 import Api from "./pages/Api";
+import WebScraping from "./pages/WebScraping";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/browser" element={<Browser />} />
+          <Route path="/web-scraping" element={<WebScraping />} />
           <Route path="/transformation" element={<Transformation />} />
           <Route path="/database" element={<Database />} />
           <Route path="/api" element={<Api />} />
