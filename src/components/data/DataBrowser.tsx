@@ -1,12 +1,14 @@
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/Card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, FileType, Filter, Search } from "lucide-react";
+import { Download, FileType, Filter, Search, BarChart3, Layers, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
 const documentCategories = [
   { id: "ans", name: "ANS - Agência Nacional de Saúde" },
@@ -90,6 +92,23 @@ const documentsData = [
   },
 ];
 
+const chartData = [
+  { name: 'ANS', count: 2 },
+  { name: 'Demonstrações', count: 4 },
+  { name: 'Operadoras', count: 1 },
+  { name: 'Procedimentos', count: 2 },
+];
+
+const chartConfig = {
+  count: {
+    label: "Quantidade de Documentos",
+    theme: {
+      light: "#8B5CF6",
+      dark: "#9b87f5"
+    }
+  }
+};
+
 interface Document {
   id: number;
   title: string;
@@ -101,9 +120,11 @@ interface Document {
 }
 
 export function DataBrowser() {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [documents, setDocuments] = useState<Document[]>(documentsData);
+  const [viewMode, setViewMode] = useState<"list" | "chart">("list");
 
   const filteredDocuments = documents.filter((doc) => {
     const matchesSearch = doc.title
@@ -114,14 +135,18 @@ export function DataBrowser() {
   });
 
   const handleDownload = (document: Document) => {
-    // In a real application, this would handle the actual download
     window.open(document.url, "_blank");
-    console.log(`Downloading ${document.title}`);
+    toast({
+      title: "Download iniciado",
+      description: `Baixando: ${document.title}`,
+    });
   };
 
   const handleBulkDownload = () => {
-    // In a real application, this would handle downloading all selected documents
-    console.log("Bulk download initiated");
+    toast({
+      title: "Download em lote iniciado",
+      description: "Os documentos selecionados serão baixados.",
+    });
   };
 
   return (
@@ -136,13 +161,33 @@ export function DataBrowser() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button variant="outline" size="icon" className="h-10 w-10">
-          <Filter className="h-4 w-4" />
-          <span className="sr-only">Filtrar</span>
-        </Button>
-        <Button onClick={handleBulkDownload}>
-          <Download className="mr-2 h-4 w-4" /> Baixar selecionados
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant={viewMode === "list" ? "default" : "outline"} 
+            size="icon" 
+            className="h-10 w-10"
+            onClick={() => setViewMode("list")}
+          >
+            <Layers className="h-4 w-4" />
+            <span className="sr-only">Modo Lista</span>
+          </Button>
+          <Button 
+            variant={viewMode === "chart" ? "default" : "outline"} 
+            size="icon" 
+            className="h-10 w-10"
+            onClick={() => setViewMode("chart")}
+          >
+            <BarChart3 className="h-4 w-4" />
+            <span className="sr-only">Modo Gráfico</span>
+          </Button>
+          <Button variant="outline" size="icon" className="h-10 w-10">
+            <Filter className="h-4 w-4" />
+            <span className="sr-only">Filtrar</span>
+          </Button>
+          <Button onClick={handleBulkDownload}>
+            <Download className="mr-2 h-4 w-4" /> Baixar selecionados
+          </Button>
+        </div>
       </div>
 
       <Tabs
@@ -161,77 +206,119 @@ export function DataBrowser() {
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-0">
-          <div className="grid grid-cols-1 gap-4">
-            {filteredDocuments.length === 0 ? (
-              <div className="text-center py-12">
-                <FileType className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                <h3 className="mt-4 text-lg font-medium">
-                  Nenhum documento encontrado
-                </h3>
-                <p className="mt-2 text-muted-foreground">
-                  Tente ajustar sua busca ou filtros para encontrar o que procura.
-                </p>
-              </div>
-            ) : (
-              filteredDocuments.map((doc, index) => (
-                <motion.div
-                  key={doc.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05, duration: 0.3 }}
-                >
-                  <Card variant="bordered" hover={false} className="overflow-hidden">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-6">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div
-                            className={cn(
-                              "flex h-8 w-8 items-center justify-center rounded-full",
-                              {
-                                "bg-blue-100 text-blue-700":
-                                  doc.format === "PDF",
-                                "bg-green-100 text-green-700":
-                                  doc.format === "CSV",
-                                "bg-amber-100 text-amber-700":
-                                  doc.format === "ZIP",
-                                "bg-purple-100 text-purple-700":
-                                  doc.format === "HTML",
-                              }
-                            )}
-                          >
-                            <span className="text-xs font-medium">
-                              {doc.format}
-                            </span>
+          {viewMode === "chart" ? (
+            <Card className="overflow-hidden">
+              <CardHeader>
+                <CardTitle>Distribuição de Documentos por Categoria</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[400px] w-full">
+                  <ChartContainer config={chartConfig}>
+                    <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis allowDecimals={false} />
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-background border p-2 rounded-md shadow-md">
+                                <p className="font-medium">{payload[0].payload.name}</p>
+                                <p>
+                                  <span className="text-muted-foreground">Documentos: </span>
+                                  <span className="font-mono">{payload[0].value}</span>
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Legend />
+                      <Bar 
+                        dataKey="count" 
+                        fill="var(--color-count)" 
+                        name="Quantidade de Documentos" 
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ChartContainer>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {filteredDocuments.length === 0 ? (
+                <div className="text-center py-12">
+                  <FileType className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                  <h3 className="mt-4 text-lg font-medium">
+                    Nenhum documento encontrado
+                  </h3>
+                  <p className="mt-2 text-muted-foreground">
+                    Tente ajustar sua busca ou filtros para encontrar o que procura.
+                  </p>
+                </div>
+              ) : (
+                filteredDocuments.map((doc, index) => (
+                  <motion.div
+                    key={doc.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05, duration: 0.3 }}
+                  >
+                    <Card variant="bordered" hover={false} className="overflow-hidden">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-6">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div
+                              className={cn(
+                                "flex h-8 w-8 items-center justify-center rounded-full",
+                                {
+                                  "bg-blue-100 text-blue-700":
+                                    doc.format === "PDF",
+                                  "bg-green-100 text-green-700":
+                                    doc.format === "CSV",
+                                  "bg-amber-100 text-amber-700":
+                                    doc.format === "ZIP",
+                                  "bg-purple-100 text-purple-700":
+                                    doc.format === "HTML",
+                                }
+                              )}
+                            >
+                              <span className="text-xs font-medium">
+                                {doc.format}
+                              </span>
+                            </div>
+                            <h3 className="font-semibold">{doc.title}</h3>
                           </div>
-                          <h3 className="font-semibold">{doc.title}</h3>
+                          <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
+                            <span>Data: {doc.date}</span>
+                            <span>Tamanho: {doc.size}</span>
+                          </div>
                         </div>
-                        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
-                          <span>Data: {doc.date}</span>
-                          <span>Tamanho: {doc.size}</span>
+                        <div className="flex mt-4 sm:mt-0">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mr-2"
+                            onClick={() => window.open(doc.url, "_blank")}
+                          >
+                            Ver
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleDownload(doc)}
+                          >
+                            <Download className="mr-1 h-4 w-4" /> Baixar
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex mt-4 sm:mt-0">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mr-2"
-                          onClick={() => window.open(doc.url, "_blank")}
-                        >
-                          Ver
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => handleDownload(doc)}
-                        >
-                          <Download className="mr-1 h-4 w-4" /> Baixar
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              ))
-            )}
-          </div>
+                    </Card>
+                  </motion.div>
+                ))
+              )}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>
